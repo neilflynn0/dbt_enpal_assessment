@@ -1,0 +1,120 @@
+version: 2
+
+models:
+  - name: stg_activity
+    description: CRM activity facts.
+    columns:
+      - name: activity_id
+        description: Primary identifier of the activity.
+        tests:
+          - not_null
+      - name: type
+        description: Raw name of event.
+        tests:
+          - not_null
+      - name: assigned_to_user
+        description: User the activity is assigned to.
+      - name: deal_id
+        description: Associated deal identifier.
+      - name: done
+        description: Completion flag.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+                quote: false
+      - name: due_to
+        description: When the activity is due (with timezone).
+
+  - name: stg_activity_types
+    description: Reference table of CRM activity types.
+    columns:
+      - name: id
+        description: Surrogate key of the activity type.
+        tests:
+          - not_null
+          - unique
+      - name: name
+        description: Human-readable activity type name.
+        tests:
+          - not_null
+      - name: active
+        description: Whether the activity type is active ('yes' or 'no').
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['Yes', 'No']
+      - name: type
+        description: Raw type/category label from source.
+
+  - name: stg_deal_changes
+    description: Field-level change log for CRM deals.
+    columns:
+      - name: deal_id
+        description: Deal identifier (not unique within this log).
+        tests:
+          - not_null
+      - name: change_time
+        description: Timestamp when the change was recorded (timezone-aware).
+        tests:
+          - not_null
+      - name: changed_field_key
+        description: Key/name of the field that changed (e.g., status, owner).
+        tests:
+          - not_null
+      - name: new_value
+        description: New value after the change (nullable for clears/resets).
+
+  - name: stg_fields
+    description: CRM field definitions with names and (optional) allowed options.
+    columns:
+      - name: ID
+        description: Unique identifier of the field definition.
+        tests:
+          - not_null
+          - unique
+      - name: FIELD_KEY
+        description: Source system key/name for the field.
+        tests:
+          - not_null
+      - name: NAME
+        description: Human-friendly display name.
+        tests:
+          - not_null
+      - name: FIELD_VALUE_OPTIONS
+        description: Raw options string from source (may be empty or JSON text).
+
+  - name: stg_stages
+    description: Reference list of CRM pipeline stages.
+    columns:
+      - name: stage_id
+        description: Unique identifier of the stage.
+        tests:
+          - not_null
+          - unique
+      - name: stage_name
+        description: Human-readable name of the stage.
+        tests:
+          - not_null
+          
+  - name: stg_users
+    description: Directory of CRM users and their metadata.
+    columns:
+      - name: id
+        description: Unique identifier of the user.
+        tests:
+          - not_null
+          - unique
+      - name: name
+        description: Full name of the user.
+        meta:
+          contains_pii: true
+      - name: email
+        description: Email address of the user.
+        tests:
+          - not_null
+        meta:
+          contains_pii: true
+      - name: modified
+        description: Last modification timestamp (timezone-aware).
