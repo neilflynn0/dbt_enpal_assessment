@@ -1,11 +1,23 @@
-# README
+## Setup
+
+1. Download Docker Desktop (if you don’t have installed) using the official website, install and launch.
+2. Fork this Github project to you Github account. Clone the forked repo to your device.
+3. Open your Command Prompt or Terminal, navigate to that folder, and run the command `docker compose up`.
+4. Now you have launched a local Postgres database with the following credentials:
+ ```
+    Host: localhost
+    User: admin
+    Password: admin
+    Port: 5432 
+```
+5. Connect to the db via a preferred tool (e.g. DataGrip, Dbeaver etc)
+6. Install dbt-core and dbt-postgres using pip (if you don’t have) on your preferred environment.
 
 ## Project Tasks
 
-1. Remove the test model once you make sure it works.
-2. Dive deep into the Pipedrive CRM source data to gain a thorough understanding of all its details. (You may also research the Pipedrive CRM tool terms.)
-3. Define dbt sources and build the necessary layers, organizing the data flow for optimal relevance and maintainability.
-4. Build a reporting model (`rep_sales_funnel_monthly`) with monthly intervals, incorporating these funnel steps (KPIs):
+1. Dive deep into the Pipedrive CRM source data to gain a thorough understanding of all its details. (You may also research the Pipedrive CRM tool terms.)
+2. Define dbt sources and build the necessary layers, organizing the data flow for optimal relevance and maintainability.
+3. Build a reporting model (`rep_sales_funnel_monthly`) with monthly intervals, incorporating these funnel steps (KPIs):
    - Step 1: Lead Generation
    - Step 2: Qualified Lead
    - Step 2.1: Sales Call 1
@@ -17,8 +29,7 @@
    - Step 7: Implementation/Onboarding
    - Step 8: Follow-up/Customer Success
    - Step 9: Renewal/Expansion
-5. Column names of the reporting model: `month`, `kpi_name`, `funnel_step`, `deals_count`.
-6. "Git commit" all the changes and create a PR to your forked repo (not the original one). Send your repo link to us.
+4. Column names of the reporting model: `month`, `kpi_name`, `funnel_step`, `deals_count`.
 
 ---
 
@@ -161,6 +172,31 @@ The staging models feed into business logic models with **monthly aggregations**
     - `funnel_step` — integer stage order.
     - `deals_count` — distinct deals entering the stage.
 
+**Implementation details**
+
+- **int_activity**
+  - **Config highlights:** monthly tagging; optional indexes on `month` and `funnel_step`; periodic `analyze` to keep planner statistics fresh.
+  - **Logic (what & why):**
+    - **Bucket to month** from `stg_activity.due_to` to align with reporting grain and reduce cardinality.
+    - **Filter to completed sales‑call interactions** (Sales Call 1 and Sales Call 2) to avoid counting scheduled/abandoned tasks.
+    - **Count distinct `deal_id`** per `(month, kpi_name)` so multiple activities on the same deal don’t double‑count.
+    - **Assign numeric `funnel_step` (2.1, 3.1)** for stable ordering and easy merging with other KPIs.
+    - **Select only required columns** to minimize scan and keep the schema aligned with the mart.
+
+- **int_deal_changes**
+  - **Config highlights:** monthly tagging; optional indexes on `month`/`funnel_step`; periodic `analyze` for accurate optimizer stats.
+  - **Logic (what & why):**
+    - **Identify true stage entries** by focusing on records where the changed field denotes a pipeline stage transition; avoids inflating counts from non‑stage edits.
+    - **Derive `month` from normalized `change_time`** (timezone handling is already done in staging) to match the reporting grain.
+    - **Map stage IDs to labels** via `stg_stages` for readable `kpi_name` and to enforce accepted values.
+    - **Count distinct `deal_id`** per `(month, stage)` to prevent multiple transitions within the same month from over‑counting.
+    - **Use integer `funnel_step` = stage order** so sorting and downstream joins stay simple and deterministic.
+
+- **Shared optimizations**
+  - **Pre‑aggregation in Intermediate** shrinks data scanned by marts and BI tools.
+  - **Minimal column selection** and **pushdown filters** improve scan efficiency and cache reuse.
+  - **Consistent schema** (`month`, `kpi_name`, `funnel_step`, `deals_count`) across both models makes the mart‑level union cheap and robust.
+
 **Documentation:** **`models/intermediate/schema.yml`**.
 
 ---
@@ -171,13 +207,18 @@ All transformations converge into the final analytical model.
 
 **Model**
 
-- **rep_sales_funnel_monthly** — provides a table of **distinct deals** that achieved each funnel step in a given month.
+- **rep\_sales\_funnel\_monthly** — provides a table of **distinct deals** that achieved each funnel step in a given month.
   - **Grain:** one row per (`month`, `kpi_name`).
   - **Columns:**
     - `month` — first day of the reporting month.
     - `kpi_name` — stage label.
     - `funnel_step` — numeric stage order.
     - `deals_count` — distinct count of deals entering the stage.
+
+**Implementation details**
+
+- **Config:** indexes on `month` and `funnel_step` **to speed common filters (month slicing) and joins on `funnel_step`**; `post_hook: analyze {{ this }}` **to refresh planner statistics** for better query execution plans.
+- **Build logic:** uses `dbt_utils.union_relations(relations=[ref('int_activity'), ref('int_deal_changes')], source_column_name=None)` **to safely stack monthly KPI rows** (aligns columns by name, avoids brittle manual `UNION ALL`), and with `source_column_name=None` **does not add an origin column**.
 
 **Documentation:** **`models/intermediate/schema.yml`**.
 
