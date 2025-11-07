@@ -300,6 +300,26 @@ This architecture follows **dbt best practices** for maintainable, auditable ana
   - **Purpose:** ensure `modified` timestamps are **UTC‑explicit**.
   - **Given:** `source('postgres_public', 'users')` (3 rows) with **naive** `modified` values.
   - **Expect:** 3 rows with columns `[id, name, email, modified]`; `modified` rendered with `+00:00` (e.g., `2024-04-27 04:51:50.980000+00:00`).
+ 
+ **How to use unit tests**
+
+- **Run unit tests for one staging model:**
+
+```bash
+# example: only unit tests targeting stg_activity
+dbt test --select "stg_activity,test_type:unit"
+```
+
+- **Run all unit tests:**
+
+```bash
+dbt test --select "test_type:unit"
+```
+
+- **When to run:**
+  - **Development:** use unit tests for a test‑driven workflow while editing SQL.
+  - **CI:** run unit tests on every PR to catch regressions early.
+  - **Production:** **do not** run unit tests — inputs are static fixtures, so there’s no benefit to spending compute cycles in prod.
 
 > Notes: These are **native dbt unit tests** expressed in YAML (`unit_tests:`), separate from data tests in `schema.yml`. They verify row‑level transformations and timezone semantics before aggregation layers.
 
