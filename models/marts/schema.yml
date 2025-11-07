@@ -6,10 +6,12 @@ models:
     columns:
       - name: month
         description: First day of the month representing the reporting period.
+        data_type: timestamptz
         tests:
           - not_null
       - name: kpi_name
         description: KPI label (stage name).
+        data_type: text
         tests:
           - not_null
           - accepted_values:
@@ -28,6 +30,7 @@ models:
                   - "Renewal/Expansion"
       - name: funnel_step
         description: Numeric stage order (e.g., 3.1).
+        data_type: numeric
         tests:
           - not_null
           - accepted_values:
@@ -36,5 +39,6 @@ models:
                 quote: false
       - name: deals_count
         description: Distinct count of deals entering the stage in the given month.
+        data_type: integer
         tests:
           - not_null

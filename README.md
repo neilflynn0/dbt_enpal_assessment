@@ -32,8 +32,9 @@
 4. Column names of the reporting model: `month`, `kpi_name`, `funnel_step`, `deals_count`.
 
 ---
+## Solution
 
-## 📋 DBT Modelling Overview
+### 📋 DBT Modelling Overview
 
 This lineage illustrates a data transformation pipeline built with dbt, showing how data moves through the project from raw sources to analytics-ready models.
 
@@ -49,7 +50,7 @@ The pipeline follows a three-layer architecture pattern commonly used in dbt pro
 
 This mapping keeps raw cleaning separate from business logic and reporting, improving lineage, testing, governance, and performance.
 
-### 🗺️ Data Flow Diagram
+#### 🗺️ Data Flow Diagram
 
 ```mermaid
 
@@ -102,7 +103,7 @@ graph LR
   I2 --> M1
 ```
 
-#### 🥉 Layer 1 — Source Tables
+##### 🥉 Layer 1 — Source Tables
 
 The pipeline begins with raw source tables from Pipedrive CRM:
 
@@ -117,7 +118,7 @@ These tables are the raw inputs for all downstream transformations.
 
 ---
 
-#### 🥈 Layer 2 — Staging (stg_*)
+##### 🥈 Layer 2 — Staging (stg_*)
 
 **Purpose.** Clean, type-safe, row-per-row views of raw sources. Staging models:
 - keep the **source grain** (no aggregation),
@@ -152,7 +153,7 @@ All column docs live in **`models/staging/schema.yml`**.
 
 ---
 
-#### 🥇 Layer 3 — Intermediate Models
+##### 🥇 Layer 3 — Intermediate Models
 
 The staging models feed into business logic models with **monthly aggregations**.
 
@@ -201,7 +202,7 @@ The staging models feed into business logic models with **monthly aggregations**
 
 ---
 
-#### 📊 Layer 4 — Marts Models
+##### 📊 Layer 4 — Marts Models
 
 All transformations converge into the final analytical model.
 
@@ -224,7 +225,7 @@ All transformations converge into the final analytical model.
 
 ---
 
-#### 🛡️ Quality Guarantees & Conventions
+##### 🛡️ Quality Guarantees & Conventions
 
 - **Layered, deterministic transformations:** Sources → Staging (type casts and time‑zone standardization — e.g., `stg_activity.due_to` adjusted; `stg_deal_changes.change_time` made timezone‑naive) → Intermediate (monthly KPIs per stage) → Marts (`rep_sales_funnel_monthly`, one row per (`month`, `kpi_name`)).
 - **Clear semantics & grain:** `month` is the first day of the reporting month; `deals_count` is the distinct count of deals entering a stage within that month; `funnel_step` encodes stage order (integers and sub‑steps such as `2.1`, `3.1`).
@@ -235,7 +236,26 @@ This architecture follows **dbt best practices** for maintainable, auditable ana
 
 ---
 
-## 🧪 DBT Tests Overview
+##### 🧹 YAML Lint Rules (.yamllint)
+
+- **Scope:** applies to `*.yaml`, `*.yml`, and the `.yamllint` file itself.
+- **Enforced (errors):** `braces`, `brackets`, `colons`, `commas`, `hyphens`, `indentation`, `key-duplicates`, `new-line-at-end-of-file`, `new-lines`, `trailing-spaces`.
+- **Disabled:** `document-start`, `document-end`, `key-ordering`, `octal-values`, `quoted-strings`.
+- **Warnings (non-blocking):** `comments`, `comments-indentation`, `truthy`, `line-length` (max **120** chars).
+
+> Rationale: strict structure/whitespace checks prevent subtle YAML parse errors; ordering is flexible; long lines and truthy values surface as warnings rather than hard failures.
+
+---
+
+##### ⚙️ Execution Settings (profiles.yml)
+
+- **threads: 4** — increased parallelism for faster `dbt build/test` on multi-core machines.
+- **Why:** speeds up compilation and model execution when models are independent.
+- **Notes:** ensure warehouse concurrency limits and memory are sufficient; adjust per environment if contention occurs.
+
+---
+
+### 🧪 DBT Tests Overview
 
 **Scope & location.** All data tests are defined in `models/**/schema.yml`. Staging tests live in `models/staging/schema.yml`; intermediate and marts tests live in `models/intermediate/schema.yml`.
 
@@ -285,7 +305,7 @@ This architecture follows **dbt best practices** for maintainable, auditable ana
 
 ---
 
-## 💡 Key Insights: Funnel Findings & Improvements
+### 💡 Key Insights: Funnel Findings & Improvements
 
 **Funnel performance**
 - **Sales calls correlate with higher conversion:** stages gated by sales‑call activities show **77–85% completion** between adjacent steps.
