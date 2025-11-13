@@ -1,0 +1,97 @@
+version: 2
+
+sources:
+  - name: postgres_public
+    database: postgres
+    schema: public
+    tables:
+      - name: activity
+        description: CRM activity facts.
+        columns:
+          - name: activity_id
+            description: Primary identifier of the activity.
+            data_type: integer
+          - name: type
+            description: Raw name of event.
+            data_type: text
+          - name: assigned_to_user
+            description: User the activity is assigned to.
+            data_type: integer
+          - name: deal_id
+            description: Associated deal identifier.
+            data_type: integer
+          - name: done
+            description: Completion flag.
+            data_type: boolean
+          - name: due_to
+            description: When the activity is due (with timezone).
+            data_type: timestamp
+      - name: activity_types
+        description: Reference table of CRM activity types.
+        columns:
+          - name: id
+            description: Surrogate key of the activity type.
+            data_type: integer
+          - name: name
+            description: Human-readable activity type name.
+            data_type: text
+          - name: active
+            description: Whether the activity type is active ('yes' or 'no').
+            data_type: text
+          - name: type
+            description: Raw type/category label from source.
+            data_type: text
+      - name: deal_changes
+        description: Field-level change log for CRM deals.
+        columns:
+          - name: deal_id
+            description: Deal identifier (not unique within this log).
+            data_type: integer
+          - name: change_time
+            description: Timestamp when the change was recorded (timezone-aware).
+            data_type: timestamp
+          - name: changed_field_key
+            description: Key/name of the field that changed (e.g., status, owner).
+            data_type: text
+          - name: new_value
+            description: New value after the change (nullable for clears/resets).
+            data_type: text
+      - name: fields
+        description: CRM field definitions with names and (optional) allowed options.
+        columns:
+          - name: ID
+            description: Unique identifier of the field definition.
+            data_type: integer
+          - name: FIELD_KEY
+            description: Source system key/name for the field.
+            data_type: text
+          - name: NAME
+            description: Human-friendly display name.
+            data_type: text
+          - name: FIELD_VALUE_OPTIONS
+            description: Raw options string from source (may be empty or JSON text).
+            data_type: json
+      - name: users
+        description: Reference list of CRM pipeline stages.
+        columns:
+          - name: stage_id
+            description: Unique identifier of the stage.
+            data_type: integer
+          - name: stage_name
+            description: Human-readable name of the stage.
+            data_type: text
+      - name: stages
+        description: Directory of CRM users and their metadata.
+        columns:
+          - name: id
+            description: Unique identifier of the user.
+            data_type: integer
+          - name: name
+            description: Full name of the user.
+            data_type: text
+          - name: email
+            description: Email address of the user.
+            data_type: text
+          - name: modified
+            description: Last modification timestamp (timezone-aware).
+            data_type: timestamp

@@ -1,0 +1,44 @@
+version: 2
+
+models:
+  - name: rep_sales_funnel_monthly
+    description: Monthly funnel KPIs per stage, one row per (month, KPI).
+    columns:
+      - name: month
+        description: First day of the month representing the reporting period.
+        data_type: timestamptz
+        tests:
+          - not_null
+      - name: kpi_name
+        description: KPI label (stage name).
+        data_type: text
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - "Lead Generation"
+                  - "Qualified lead"
+                  - "Sales Call 1"
+                  - "Needs Assessment"
+                  - "Sales Call 2"
+                  - "Proposal/Quote Preparation"
+                  - "Negotiation"
+                  - "Closing"
+                  - "Implementation/Onboarding"
+                  - "Follow-up/Customer Success"
+                  - "Renewal/Expansion"
+      - name: funnel_step
+        description: Numeric stage order (e.g., 3.1).
+        data_type: numeric
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [1, 2, 2.1, 3, 3.1, 4, 5, 6, 7, 8, 9]
+                quote: false
+      - name: deals_count
+        description: Distinct count of deals entering the stage in the given month.
+        data_type: integer
+        tests:
+          - not_null

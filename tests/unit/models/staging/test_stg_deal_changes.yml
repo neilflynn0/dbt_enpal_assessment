@@ -1,0 +1,33 @@
+unit_tests:
+  - name: test_stg_deal_changes
+    description: Validate stg_deal_changes correctly transforms deal change records.
+    model: stg_deal_changes
+    given:
+      - input: source('postgres_public', 'deal_changes')
+        rows:
+          - deal_id: 881836
+            change_time: '2024-04-09 21:32:09.000 +0200'
+            changed_field_key: add_time
+            new_value: '2024-04-09T21:32:09'
+          - deal_id: 881836
+            change_time: '2024-04-12 21:32:09.000 +0200'
+            changed_field_key: user_id
+            new_value: '1463'
+          - deal_id: 881836
+            change_time: '2024-04-17 21:32:09.000 +0200'
+            changed_field_key: user_id
+            new_value: '1728'
+    expect:
+      rows:
+        - deal_id: 881836
+          change_time: '2024-04-09 21:32:09.000'
+          changed_field_key: add_time
+          new_value: '2024-04-09T21:32:09'
+        - deal_id: 881836
+          change_time: '2024-04-12 21:32:09.000'
+          changed_field_key: user_id
+          new_value: '1463'
+        - deal_id: 881836
+          change_time: '2024-04-17 21:32:09.000'
+          changed_field_key: user_id
+          new_value: '1728'

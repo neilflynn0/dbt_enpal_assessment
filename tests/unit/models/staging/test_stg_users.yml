@@ -1,0 +1,33 @@
+unit_tests:
+  - name: test_stg_users
+    description: Ensure stg_users outputs users with UTC timestamps.
+    model: stg_users
+    given:
+      - input: source('postgres_public', 'users')
+        rows:
+          - id: 1
+            name: "Ashley Gonzalez"
+            email: crystaljackson@example.org
+            modified: '2024-04-27 04:51:50.980'
+          - id: 2
+            name: "Joseph Pena"
+            email: wagnernicholas@example.org
+            modified: '2024-04-10 09:27:18.033'
+          - id: 3
+            name: "Katie Brown"
+            email: natasha25@example.org
+            modified: '2024-08-30 08:29:15.755'
+    expect:
+      rows:
+        - id: 1
+          name: "Ashley Gonzalez"
+          email: crystaljackson@example.org
+          modified: '2024-04-27 04:51:50.980000+00:00'
+        - id: 2
+          name: "Joseph Pena"
+          email: wagnernicholas@example.org
+          modified: '2024-04-10 09:27:18.033000+00:00'
+        - id: 3
+          name: "Katie Brown"
+          email: natasha25@example.org
+          modified: '2024-08-30 08:29:15.755000+00:00'

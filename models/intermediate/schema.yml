@@ -1,0 +1,73 @@
+version: 2
+
+models:
+  - name: int_deal_changes
+    description: Monthly funnel KPI showing how many distinct deals entered each stage.
+    columns:
+      - name: month
+        description: First day of the month representing the reporting period.
+        data_type: timestamptz
+        tests:
+          - not_null
+      - name: kpi_name
+        description: KPI label (stage name).
+        data_type: text
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - "Lead Generation"
+                  - "Qualified lead"
+                  - "Needs Assessment"
+                  - "Proposal/Quote Preparation"
+                  - "Negotiation"
+                  - "Closing"
+                  - "Implementation/Onboarding"
+                  - "Follow-up/Customer Success"
+                  - "Renewal/Expansion"
+      - name: funnel_step
+        description: Integer stage order (e.g., 1,2,3).
+        data_type: integer
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+                quote: false
+      - name: deals_count
+        description: Distinct count of deals entering the stage in the given month.
+        data_type: integer
+        tests:
+          - not_null
+
+  - name: int_activity
+    description: Monthly funnel KPI showing how many distinct deals entered Sales Call stage.
+    columns:
+      - name: month
+        description: First day of the month representing the reporting period.
+        data_type: timestamptz
+        tests:
+          - not_null
+      - name: kpi_name
+        description: KPI label (stage name).
+        data_type: text
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Sales Call 1', 'Sales Call 2']
+      - name: funnel_step
+        description: Numeric stage order (e.g., 3.1).
+        data_type: numeric
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [2.1, 3.1]
+                quote: false
+      - name: deals_count
+        description: Distinct count of deals entering the stage in the given month.
+        data_type: integer
+        tests:
+          - not_null
